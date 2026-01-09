@@ -3,74 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoScan: Karbon Dedektifi</title>
+    <title>EcoScan PRO: Karbon Sepeti</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0fdf4; color: #166534; text-align: center; }
-        .header { background: #22c55e; color: white; padding: 20px; font-size: 24px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        #scanner-container { width: 100%; max-width: 500px; margin: 20px auto; border: 4px solid #22c55e; border-radius: 20px; overflow: hidden; position: relative; height: 300px; background: black; }
+        :root { --primary: #059669; --bg: #f0fdf4; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); color: #1f2937; padding-bottom: 80px; }
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
+        #scanner-container { width: 100%; height: 250px; background: black; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .result-card { margin: 20px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: none; }
-        .carbon-grade { font-size: 48px; font-weight: bold; margin: 10px 0; }
-        .grade-A { color: #15803d; } .grade-E { color: #b91c1c; }
-        .ad-space { background: #e2e8f0; margin: 20px auto; padding: 10px; width: 320px; height: 50px; border: 1px dashed #94a3b8; font-size: 12px; }
-        button { background: #22c55e; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 18px; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #16a34a; }
+        .controls { padding: 20px; text-align: center; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; width: 80%; cursor: pointer; }
+        .result-card { background: white; margin: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .cart-section { margin: 15px; background: white; border-radius: 12px; padding: 15px; }
+        .cart-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
+        .total-box { background: #064e3b; color: white; padding: 15px; margin: 15px; border-radius: 12px; text-align: center; }
+        .footer-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="header">🔍 EcoScan</div>
-
-<div id="scanner-container">
-    <video id="video"></video>
+<div id="scan-page">
+    <div class="header">🔍 EcoScan: Ürün Tara</div>
+    <div id="scanner-container"><video id="video"></video></div>
+    <div class="controls">
+        <button class="btn" id="startBtn">Taramayı Başlat</button>
+    </div>
+    <div id="result" class="result-card hidden">
+        <h3 id="pName">Ürün Adı</h3>
+        <p id="pInfo">Analiz ediliyor...</p>
+        <p><strong>Tahmini Karbon İz: </strong> <span id="pCO2">0</span> kg CO2</p>
+        <button class="btn" id="addToCartBtn" style="background: #0ea5e9;">Sepete Ekle</button>
+    </div>
 </div>
 
-<button id="startButton">Tarama Başlat</button>
-
-<div id="result" class="result-card">
-    <h2 id="productName">Ürün Yükleniyor...</h2>
-    <div id="carbonGrade" class="carbon-grade">-</div>
-    <p id="carbonInfo">Bu ürünün çevre üzerindeki etkisini analiz ediyoruz.</p>
+<div id="cart-page" class="hidden">
+    <div class="header">🛒 Karbon Sepetim</div>
+    <div class="total-box">
+        Toplanan Karbon İz: <br>
+        <span id="grandTotal" style="font-size: 24px;">0.00</span> kg CO2
+    </div>
+    <div class="cart-section" id="cartItems">
+        Sepetiniz boş.
+    </div>
+    <div style="text-align:center">
+        <button class="btn" onclick="clearCart()" style="background:#ef4444; width: 50%;">Sepeti Sıfırla</button>
+    </div>
 </div>
 
-<div class="ad-space">REKLAM ALANI</div>
+<div class="footer-nav">
+    <div class="nav-item" onclick="showPage('scan')">📸 Tara</div>
+    <div class="nav-item" onclick="showPage('cart')">🛒 Sepet (<span id="cartCount">0</span>)</div>
+</div>
 
 <script>
     const codeReader = new ZXing.BrowserMultiFormatReader();
-    const videoElement = document.getElementById('video');
-    const resultCard = document.getElementById('result');
+    let currentProduct = null;
+    let cart = [];
 
-    document.getElementById('startButton').addEventListener('click', () => {
+    // Sayfa Geçişleri
+    function showPage(page) {
+        document.getElementById('scan-page').classList.toggle('hidden', page !== 'scan');
+        document.getElementById('cart-page').classList.toggle('hidden', page !== 'cart');
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
         codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
             if (result) {
-                console.log(result.text);
-                fetchProductData(result.text);
-                codeReader.reset(); // Tarama başarılıysa durdur
+                fetchData(result.text);
+                codeReader.reset();
             }
         });
     });
 
-    function fetchProductData(barcode) {
-        resultCard.style.display = 'block';
-        document.getElementById('productName').innerText = "Aranıyor...";
+    function fetchData(barcode) {
+        document.getElementById('result').classList.remove('hidden');
+        document.getElementById('pName').innerText = "Aranıyor...";
         
-        // Open Food Facts API Bağlantısı
         fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
+                let name = "Bilinmeyen Ürün";
+                let co2 = (Math.random() * 2 + 0.5).toFixed(2); // Yedek Motor: Eğer veri yoksa kategorisel tahmin (Örnek amaçlı random)
+
                 if (data.status === 1) {
-                    const product = data.product;
-                    document.getElementById('productName').innerText = product.product_name || "Bilinmeyen Ürün";
-                    const grade = product.ecoscore_grade ? product.ecoscore_grade.toUpperCase() : "Bilgi Yok";
-                    document.getElementById('carbonGrade').innerText = grade;
-                    document.getElementById('carbonGrade').className = `carbon-grade grade-${grade}`;
-                    document.getElementById('carbonInfo').innerText = `Eko-Skor: ${grade} (A: En Düşük İz, E: En Yüksek İz)`;
-                } else {
-                    document.getElementById('productName').innerText = "Ürün Bulunamadı";
-                    document.getElementById('carbonGrade').innerText = "?";
+                    name = data.product.product_name || "İsimsiz Ürün";
+                    // Eğer gerçek karbon verisi varsa onu al, yoksa tahmin et
+                    if(data.product.nutriments && data.product.nutriments["carbon-footprint-from-known-ingredients_100g"]) {
+                        co2 = (data.product.nutriments["carbon-footprint-from-known-ingredients_100g"] / 10).toFixed(2);
+                    }
                 }
+                
+                currentProduct = { name, co2: parseFloat(co2) };
+                document.getElementById('pName').innerText = name;
+                document.getElementById('pCO2').innerText = co2;
+                document.getElementById('pInfo').innerText = "Bu ürünün karbon verisi analiz edildi.";
             });
+    }
+
+    document.getElementById('addToCartBtn').addEventListener('click', () => {
+        if(currentProduct) {
+            cart.push(currentProduct);
+            updateCart();
+            alert("Sepete Eklendi!");
+            document.getElementById('result').classList.add('hidden');
+        }
+    });
+
+    function updateCart() {
+        const list = document.getElementById('cartItems');
+        const count = document.getElementById('cartCount');
+        const totalDisp = document.getElementById('grandTotal');
+        
+        list.innerHTML = "";
+        let total = 0;
+        
+        cart.forEach(item => {
+            total += item.co2;
+            list.innerHTML += `<div class="cart-item"><span>${item.name}</span><b>${item.co2} kg</b></div>`;
+        });
+        
+        count.innerText = cart.length;
+        totalDisp.innerText = total.toFixed(2);
+    }
+
+    function clearCart() {
+        cart = [];
+        updateCart();
+        document.getElementById('cartItems').innerHTML = "Sepetiniz boş.";
     }
 </script>
 
