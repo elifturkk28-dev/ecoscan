@@ -3,101 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoScan: Küresel Dönüşüm</title>
+    <title>EcoScan: Karbon Asistanı</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #059669; --secondary: #10b981; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: #1e293b; padding-bottom: 70px; }
-        
-        /* Sayfa Yapıları */
-        .page { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+        :root { --primary: #059669; --bg: #f8fafc; --accent: #10b981; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #1e293b; padding-bottom: 80px; }
+        .page { display: none; padding: 20px; animation: slideUp 0.3s ease-out; }
         .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Giriş Ekranı Tasarımı */
-        .hero-card { background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 40px 20px; border-radius: 0 0 40px 40px; text-align: center; margin-bottom: 30px; }
-        .hero-title { font-size: 28px; font-weight: 800; margin-bottom: 15px; line-height: 1.2; }
-        .hero-sub { font-size: 16px; opacity: 0.9; }
+        /* Kartlar ve Tasarım */
+        .header-card { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; margin-bottom: 20px; }
+        .tip-box { background: #dcfce7; color: #166534; padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 14px; border-left: 5px solid var(--primary); }
+        .stat-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
+        /* Grafik Alanı */
+        #carbonChart { width: 100% !important; height: 200px !important; }
+
         /* Butonlar */
-        .btn-main { background: var(--primary); color: white; border: none; padding: 18px 40px; border-radius: 15px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3); transition: 0.3s; }
-        .btn-scan { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px 25px; border-radius: 12px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
 
-        /* Tarama Ekranı */
-        #scanner-container { width: 100%; height: 300px; background: #000; border-radius: 20px; overflow: hidden; margin-bottom: 20px; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Sonuç ve Sepet */
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 20px; }
-        .cart-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .total-badge { background: #064e3b; color: #ecfdf5; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
-
-        /* Alt Navigasyon */
-        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 70px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; }
+        /* Navigasyon */
+        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 70px; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: #64748b; cursor: pointer; }
         .nav-active { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="home-page" class="page active">
-    <div class="hero-card">
-        <div class="hero-title">Karbon ayak izini hemen hesapla, küresel dönüşüme katıl!</div>
-        <div class="hero-sub">Marketteki ürünleri tara, çevresel etkini yönet ve daha yeşil bir gelecek inşa et.</div>
+    <div class="header-card">
+        <h2 style="margin:0">Hoş Geldin, Yeşil Elçi 🌿</h2>
+        <p style="opacity: 0.9; font-size: 14px;">Haftalık Karbon Karnen</p>
     </div>
-    
-    <div style="padding: 20px;">
-        <h3 style="margin-bottom: 20px;">Hızlı İşlemler</h3>
-        <button class="btn-main" onclick="showPage('scan')">📸 Ürün Tara</button>
-        <div style="margin-top: 20px; text-align: center; color: #64748b;">
-            Bugüne kadar toplam <strong id="home-total">0.00</strong> kg CO2 biriktirdin.
-        </div>
+
+    <div class="tip-box">
+        <strong>Günün Tavsiyesi:</strong> <span id="daily-tip">Yükleniyor...</span>
     </div>
+
+    <div class="stat-card">
+        <canvas id="carbonChart"></canvas>
+    </div>
+
+    <button class="btn" onclick="showPage('scan')">📸 Ürün Tara & Hesapla</button>
 </div>
 
 <div id="scan-page" class="page">
-    <h2 style="text-align: center;">Ürün Tara</h2>
-    <div id="scanner-container"><video id="video"></video></div>
-    <div id="result" class="card" style="display:none;">
-        <h3 id="pName" style="margin-top:0">Ürün Adı</h3>
-        <p>Tahmini İz: <strong id="pCO2" style="font-size: 20px; color: #ef4444;">0</strong> kg CO2</p>
-        <button class="btn-main" id="addToCartBtn">Sepete Ekle</button>
+    <h2 style="text-align:center">Ürün Taraması</h2>
+    <div id="scanner-container" style="width:100%; height:250px; background:black; border-radius:20px; overflow:hidden;">
+        <video id="video" style="width:100%; height:100%; object-fit:cover;"></video>
     </div>
-    <p style="text-align: center; color: #64748b; margin-top: 20px;">Barkodu kameraya yaklaştırın</p>
+    <div id="result" class="stat-card" style="display:none; margin-top:20px;">
+        <h3 id="pName">Ürün Adı</h3>
+        <p>Karbon İz: <strong id="pCO2" style="color:red">0</strong> kg CO2</p>
+        <button class="btn" id="addToCartBtn">Haftalık Listeme Ekle</button>
+    </div>
 </div>
 
-<div id="cart-page" class="page">
-    <h2 style="text-align: center;">Karbon Sepetim</h2>
-    <div class="total-badge">
-        <div style="font-size: 14px; opacity: 0.8;">Toplam Alışveriş İzi</div>
-        <div style="font-size: 32px; font-weight: 800;"><span id="grandTotal">0.00</span> kg</div>
+<div id="report-page" class="page">
+    <h2>Kişisel Takip</h2>
+    <div class="stat-card">
+        <p>Hızlı Karbon Ekle (Günlük Aktivite)</p>
+        <select id="activity-type" style="width:100%; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <option value="0.5">Kısa Mesafe Araba (0.5kg)</option>
+            <option value="1.2">Et Tüketimi (1.2kg)</option>
+            <option value="0.1">Sıcak Duş (0.1kg)</option>
+        </select>
+        <button class="btn btn-outline" onclick="addManualEntry()">Listeye İşle</button>
     </div>
-    <div id="cartItems" class="card">Sepetiniz şu an boş.</div>
-    <button class="btn-main" onclick="clearCart()" style="background: #ef4444; margin-top: 20px;">Sepeti Temizle</button>
+
+    <div class="stat-card" id="monthly-report">
+        <h3>Aylık Rapor Özeti</h3>
+        <p id="report-text">Henüz yeterli veri yok. Veri eklemeye devam et!</p>
+    </div>
 </div>
 
 <div class="nav">
     <div class="nav-item nav-active" id="nav-home" onclick="showPage('home')">🏠 Ana Sayfa</div>
     <div class="nav-item" id="nav-scan" onclick="showPage('scan')">📸 Tara</div>
-    <div class="nav-item" id="nav-cart" onclick="showPage('cart')">🛒 Sepet (<span id="cartCount">0</span>)</div>
+    <div class="nav-item" id="nav-report" onclick="showPage('report')">📊 Rapor</div>
 </div>
 
 <script>
+    const tips = [
+        "Asansör yerine merdiven kullanarak 200g CO2 tasarrufu yapabilirsin.",
+        "Kullanmadığın ışıkları kapatmak aylık karbon izini %5 azaltır.",
+        "Bugün yerel ürünleri tercih ederek nakliye emisyonunu düşürebilirsin.",
+        "Et tüketimini bir gün ara vermek 10km yol gitmeye eşdeğer karbon tasarrufu sağlar."
+    ];
+
+    let history = JSON.parse(localStorage.getItem('ecoHistory')) || [0,0,0,0,0,0,0];
     const codeReader = new ZXing.BrowserMultiFormatReader();
-    let cart = JSON.parse(localStorage.getItem('ecoCart')) || []; // Hafızadan yükle
     let currentProduct = null;
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
-        
         document.getElementById(pageId + '-page').classList.add('active');
         document.getElementById('nav-' + pageId).classList.add('nav-active');
 
         if(pageId === 'scan') startScanning();
         else codeReader.reset();
         
-        updateUI();
+        if(pageId === 'home') initChart();
+    }
+
+    // Grafik Sistemi
+    let myChart;
+    function initChart() {
+        const ctx = document.getElementById('carbonChart').getContext('2d');
+        if(myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+                datasets: [{
+                    label: 'Günlük Karbon (kg)',
+                    data: history,
+                    borderColor: '#059669',
+                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            }
+        });
+        document.getElementById('daily-tip').innerText = tips[Math.floor(Math.random() * tips.length)];
+    }
+
+    function addManualEntry() {
+        let val = parseFloat(document.getElementById('activity-type').value);
+        let dayIndex = new Date().getDay(); // 0-6 arası gün
+        dayIndex = dayIndex === 0 ? 6 : dayIndex - 1; // Pazartesiyi 0 yap
+        
+        history[dayIndex] += val;
+        localStorage.setItem('ecoHistory', JSON.stringify(history));
+        alert("Başarıyla eklendi!");
+        initChart();
     }
 
     function startScanning() {
@@ -111,14 +154,11 @@
 
     function fetchProduct(barcode) {
         document.getElementById('result').style.display = 'block';
-        document.getElementById('pName').innerText = "Aranıyor...";
-        
         fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
             .then(r => r.json())
             .then(data => {
                 let name = data.status === 1 ? (data.product.product_name || "İsimsiz Ürün") : "Bilinmeyen Ürün";
-                let co2 = (Math.random() * 1.5 + 0.3).toFixed(2); // Tahmin algoritması
-                
+                let co2 = (Math.random() * 1.5 + 0.3).toFixed(2);
                 currentProduct = { name, co2: parseFloat(co2) };
                 document.getElementById('pName').innerText = name;
                 document.getElementById('pCO2').innerText = co2;
@@ -127,42 +167,16 @@
 
     document.getElementById('addToCartBtn').onclick = () => {
         if(currentProduct) {
-            cart.push(currentProduct);
-            localStorage.setItem('ecoCart', JSON.stringify(cart)); // Hafızaya kaydet
-            updateUI();
-            alert("Ürün başarıyla kaydedildi!");
-            showPage('cart');
+            let dayIndex = new Date().getDay();
+            dayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+            history[dayIndex] += currentProduct.co2;
+            localStorage.setItem('ecoHistory', JSON.stringify(history));
+            alert("Ürün haftalık verine eklendi!");
+            showPage('home');
         }
     };
 
-    function updateUI() {
-        const list = document.getElementById('cartItems');
-        let total = 0;
-        
-        if(cart.length > 0) {
-            list.innerHTML = "";
-            cart.forEach((item, index) => {
-                total += item.co2;
-                list.innerHTML += `<div class="cart-item"><span>${item.name}</span><strong>${item.co2} kg</strong></div>`;
-            });
-        } else {
-            list.innerHTML = "Sepetiniz şu an boş.";
-        }
-        
-        document.getElementById('cartCount').innerText = cart.length;
-        document.getElementById('grandTotal').innerText = total.toFixed(2);
-        document.getElementById('home-total').innerText = total.toFixed(2);
-    }
-
-    function clearCart() {
-        if(confirm("Tüm sepeti temizlemek istediğine emin misin?")) {
-            cart = [];
-            localStorage.removeItem('ecoCart');
-            updateUI();
-        }
-    }
-
-    updateUI(); // Başlangıçta verileri çek
+    window.onload = initChart;
 </script>
 
 </body>
