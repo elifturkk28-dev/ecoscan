@@ -3,226 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoScan: Profesyonel Karbon Koçu</title>
+    <title>EcoScan: PDF Rapor Destekli Analiz</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --primary: #065f46; --accent: #10b981; --bg: #f8fafc; --white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: #1e293b; padding-bottom: 110px; }
-        .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
+        :root { --primary: #065f46; --accent: #10b981; --bg: #f1f5f9; --white: #ffffff; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: #1e293b; padding-bottom: 90px; }
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Kartlar ve Raporlar */
-        .header-card { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .mini-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
-        .mini-card span { display: block; font-size: 12px; color: #64748b; }
-        .mini-card strong { font-size: 18px; color: var(--primary); }
+        .card { background: var(--white); border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .header-box { background: var(--primary); color: white; padding: 30px 20px; text-align: center; border-radius: 0 0 30px 30px; }
+        
+        .tabs { display: flex; background: #e2e8f0; padding: 5px; border-radius: 12px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #64748b; }
+        .tab-active { background: var(--white); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        /* Motivasyon Alanı */
-        .motivation-box { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 20px; border-radius: 20px; margin-top: 20px; text-align: center; }
-        .impact-score { font-size: 24px; font-weight: 800; color: #059669; margin: 10px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 15px; }
 
-        /* Hesaplama Formu */
-        .input-box { margin-bottom: 15px; text-align: left; }
-        select, input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; margin-top: 5px; }
+        .record-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-pdf { background: #dc2626; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* Navigasyon */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 75px; z-index: 1000; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--white); display: flex; border-top: 1px solid #e2e8f0; height: 75px; z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: #94a3b8; cursor: pointer; }
         .nav-active { color: var(--primary); font-weight: bold; }
-
-        .btn-calc-float { position: fixed; bottom: 85px; left: 20px; right: 20px; background: #fbbf24; color: #78350f; border: none; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(251,191,36,0.4); cursor: pointer; z-index: 999; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div id="home-page" class="page active">
-    <div class="header-card">
-        <h2 style="margin:0">EcoScan PRO 🌿</h2>
-        <p id="date-display" style="opacity: 0.8; font-size: 14px;"></p>
+    <div class="header-box">
+        <h2 style="margin:0">EcoScan PRO</h2>
+        <p style="font-size: 14px; opacity: 0.8;">Karbon Ayak İzi Raporlama</p>
     </div>
-
-    <div class="motivation-box">
-        <div style="font-size: 14px;">Doğaya Katkı Oranın</div>
-        <div class="impact-score" id="impact-percent">%0</div>
-        <p id="motivation-text" style="font-size: 13px; color: #065f46; line-height: 1.4;"></p>
-    </div>
-
-    <div class="stat-grid">
-        <div class="mini-card"><span>Bugünkü İz</span><strong id="daily-kg">0.0</strong><small> kg</small></div>
-        <div class="mini-card"><span>Haftalık Toplam</span><strong id="weekly-kg">0.0</strong><small> kg</small></div>
-        <div class="mini-card"><span>Aylık Toplam</span><strong id="monthly-kg">0.0</strong><small> kg</small></div>
-        <div class="mini-card"><span>Genel Ortalama</span><strong id="avg-kg">0.0</strong><small> kg</small></div>
-    </div>
-
-    <div class="mini-card" style="margin-top:20px;">
-        <canvas id="mainChart" style="height: 180px;"></canvas>
-    </div>
-</div>
-
-<div id="scan-page" class="page">
-    <h2 style="text-align:center">Ürün Analizi</h2>
-    <div style="width:100%; height:250px; background:black; border-radius:20px; overflow:hidden;"><video id="video" style="width:100%; height:100%; object-fit:cover;"></video></div>
-    <div id="scan-result" class="mini-card" style="display:none; margin-top:20px;">
-        <h3 id="pName" style="margin:0">Ürün Adı</h3>
-        <p>Hesaplanan Karbon: <strong id="pCO2" style="color:#ef4444;">0</strong> kg</p>
-        <button class="btn-save" onclick="addFromScan()">Güne Ekle</button>
+    <div class="card" style="margin-top:20px;">
+        <canvas id="weeklyChart" style="height: 180px;"></canvas>
     </div>
 </div>
 
 <div id="calc-page" class="page">
-    <h2>Profesyonel Hesaplayıcı</h2>
-    <div class="mini-card">
-        <div class="input-box">
-            <label>Aktivite Tipi</label>
-            <select id="calc-type">
-                <option value="0.18">🚗 Araba (Benzinli - 1km)</option>
-                <option value="0.06">🚌 Toplu Taşıma (1km)</option>
-                <option value="2.50">🥩 Kırmızı Et (1 Porsiyon)</option>
-                <option value="0.80">🍗 Beyaz Et (1 Porsiyon)</option>
-                <option value="0.40">🥛 Süt / Yoğurt (1 Porsiyon)</option>
-            </select>
+    <div class="tabs">
+        <div class="tab tab-active" id="tab-new" onclick="switchCalcTab('new')">Yeni Hesap</div>
+        <div class="tab" id="tab-history" onclick="switchCalcTab('history')">Verilerim</div>
+    </div>
+
+    <div id="calc-new-section">
+        <div class="card">
+            <h3>Günlük Aktivite Girişi</h3>
+            <div class="form-group"><label>Ulaşım (km)</label><input type="number" id="val-transport"></div>
+            <div class="form-group"><label>Doğalgaz (m3)</label><input type="number" id="val-heating"></div>
+            <div class="form-group"><label>Elektrik (kWh)</label><input type="number" id="val-electric"></div>
+            <div class="form-group"><label>Kırmızı Et (Porsiyon)</label><input type="number" id="val-food"></div>
+            <button class="btn-main" onclick="calculatePro()">Kaydet</button>
         </div>
-        <div class="input-box">
-            <label>Miktar</label>
-            <input type="number" id="calc-amount" placeholder="Miktar giriniz..." min="1">
+    </div>
+
+    <div id="calc-history-section" style="display:none;">
+        <div class="card">
+            <button class="btn-main btn-pdf" onclick="generatePDF()">📄 PDF Raporu Oluştur</button>
+            <div id="records-list" style="margin-top:20px;"></div>
         </div>
-        <button class="btn-save" onclick="calculatePro()">Hesapla ve Güne İşle</button>
     </div>
 </div>
 
-<button class="btn-calc-float" onclick="showPage('calc')">⚖️ Karbon Ayak İzi Hesapla</button>
-
 <div class="bottom-nav">
-    <div class="nav-item nav-active" id="nav-home" onclick="showPage('home')">🏠 Rapor</div>
-    <div class="nav-item" id="nav-scan" onclick="showPage('scan')">📸 Tara</div>
+    <div class="nav-item nav-active" id="nav-home" onclick="showPage('home')">🏠 Özet</div>
+    <div class="nav-item" onclick="showPage('calc')" style="background: #fef3c7; border-radius: 20px 20px 0 0;">
+        <span style="font-size: 20px;">⚖️</span><b>Hesapla</b>
+    </div>
 </div>
 
 <script>
-    // VERİ YAPISI: [Günlük, Haftalık, Aylık, Kayıt Sayısı]
-    let ecoData = JSON.parse(localStorage.getItem('ecoStatsV6')) || {
-        daily: 0,
-        weekly: 0,
-        monthly: 0,
-        count: 0,
-        history: [0, 0, 0, 0, 0, 0, 0] // Son 7 günün verisi
-    };
-
-    const codeReader = new ZXing.BrowserMultiFormatReader();
+    let ecoStore = JSON.parse(localStorage.getItem('ecoStoreV8')) || { history: [], weeklyData: [0,0,0,0,0,0,0] };
     let myChart = null;
 
     function showPage(p) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('nav-active'));
         document.getElementById(p + '-page').classList.add('active');
-        if(document.getElementById('nav-' + p)) document.getElementById('nav-' + p).classList.add('nav-active');
-        
-        if(p === 'scan') startScanner(); else codeReader.reset();
-        if(p === 'home') { updateUI(); setTimeout(initChart, 100); }
+        if(p === 'home') setTimeout(initChart, 100);
     }
 
-    // HESAPLAMA MOTORU
+    function switchCalcTab(tab) {
+        document.getElementById('calc-new-section').style.display = tab === 'new' ? 'block' : 'none';
+        document.getElementById('calc-history-section').style.display = tab === 'history' ? 'block' : 'none';
+        if(tab === 'history') renderRecords();
+    }
+
     function calculatePro() {
-        const factor = parseFloat(document.getElementById('calc-type').value);
-        const amount = parseFloat(document.getElementById('calc-amount').value);
-        if(!amount) return alert("Lütfen miktar girin.");
-
-        const res = factor * amount;
-        updateData(res);
-        alert(`${res.toFixed(2)} kg CO2 başarıyla kaydedildi!`);
-        showPage('home');
-    }
-
-    function updateData(val) {
+        const total = (document.getElementById('val-transport').value * 0.18) + 
+                      (document.getElementById('val-heating').value * 1.9) + 
+                      (document.getElementById('val-electric').value * 0.45) + 
+                      (document.getElementById('val-food').value * 2.5);
+        
         const now = new Date();
-        const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
-
-        ecoData.daily += val;
-        ecoData.weekly += val;
-        ecoData.monthly += val;
-        ecoData.count += 1;
-        ecoData.history[day] += val;
-
-        localStorage.setItem('ecoStatsV6', JSON.stringify(ecoData));
-        updateUI();
+        ecoStore.history.push({ date: now.toLocaleDateString('tr-TR'), val: total });
+        ecoStore.weeklyData[now.getDay() === 0 ? 6 : now.getDay() - 1] += total;
+        localStorage.setItem('ecoStoreV8', JSON.stringify(ecoStore));
+        alert("Kaydedildi!");
+        switchCalcTab('history');
     }
 
-    function updateUI() {
-        document.getElementById('daily-kg').innerText = ecoData.daily.toFixed(1);
-        document.getElementById('weekly-kg').innerText = ecoData.weekly.toFixed(1);
-        document.getElementById('monthly-kg').innerText = ecoData.monthly.toFixed(1);
-        
-        const avg = (ecoData.monthly / (new Date().getDate())).toFixed(1);
-        document.getElementById('avg-kg').innerText = avg;
+    function renderRecords() {
+        const list = document.getElementById('records-list');
+        list.innerHTML = ecoStore.history.map(r => `
+            <div class="record-item">
+                <span>${r.date}</span>
+                <strong>${r.val.toFixed(2)} kg CO2</strong>
+            </div>
+        `).reverse().join('');
+    }
 
-        // DOĞAYA DESTEK SKORU VE MOTİVASYON
-        const worldAvg = 13.0; // Günlük ortalama 13kg varsayımı
-        let supportPercent = Math.max(0, 100 - (ecoData.daily / worldAvg * 100));
-        if(ecoData.daily === 0) supportPercent = 0;
+    // PDF OLUŞTURMA MOTORU
+    function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(22);
+        doc.setTextColor(6, 95, 70);
+        doc.text("EcoScan Karbon Ayak Izi Raporu", 20, 20);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Rapor Tarihi: ${new Date().toLocaleString('tr-TR')}`, 20, 30);
+        doc.text("--------------------------------------------------", 20, 35);
 
-        document.getElementById('impact-percent').innerText = `%${supportPercent.toFixed(0)}`;
+        let y = 50;
+        doc.text("Tarih", 20, y);
+        doc.text("Salinim (kg CO2)", 100, y);
         
-        const mText = document.getElementById('motivation-text');
-        if(supportPercent > 70) {
-            mText.innerText = "Harikasın! Bugün bir ağaç dikmiş kadar doğayı korudun. Takdirlerimizi sunuyoruz! 🌟";
-        } else if(supportPercent > 40) {
-            mText.innerText = "İyi bir yoldasın. Küçük değişikliklerle doğaya desteğini %60'ın üzerine çıkarabilirsin! 🌱";
-        } else {
-            mText.innerText = "Bugün izin biraz yüksek. Toplu taşımayı seçerek yarın bu skoru %50 artırabilirsin! 🚲";
-        }
-        
-        document.getElementById('date-display').innerText = new Date().toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
+        ecoStore.history.forEach(r => {
+            y += 10;
+            doc.text(r.date, 20, y);
+            doc.text(`${r.val.toFixed(2)} kg`, 100, y);
+        });
+
+        const total = ecoStore.history.reduce((a, b) => a + b.val, 0);
+        y += 20;
+        doc.setFontSize(14);
+        doc.text(`Toplam Birikmis Karbon Izi: ${total.toFixed(2)} kg CO2`, 20, y);
+
+        doc.save("EcoScan_Karbon_Raporu.pdf");
     }
 
     function initChart() {
-        const ctx = document.getElementById('mainChart').getContext('2d');
+        const ctx = document.getElementById('weeklyChart').getContext('2d');
         if(myChart) myChart.destroy();
         myChart = new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-                datasets: [{
-                    label: 'Günlük kg CO2',
-                    data: ecoData.history,
-                    borderColor: '#065f46',
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)'
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    // TARAMA VE DİĞER FONKSİYONLAR
-    let scanVal = 0;
-    function startScanner() {
-        codeReader.decodeFromVideoDevice(null, 'video', (result) => {
-            if (result) {
-                document.getElementById('scan-result').style.display = 'block';
-                fetch(`https://world.openfoodfacts.org/api/v0/product/${result.text}.json`)
-                    .then(r => r.json()).then(d => {
-                        const name = d.status === 1 ? d.product.product_name : "Yerel Ürün";
-                        scanVal = (Math.random() * 1.2).toFixed(2);
-                        document.getElementById('pName').innerText = name;
-                        document.getElementById('pCO2').innerText = scanVal;
-                    });
-                codeReader.reset();
+                datasets: [{ label: 'kg CO2', data: ecoStore.weeklyData, backgroundColor: '#10b981' }]
             }
         });
     }
 
-    function addFromScan() {
-        updateData(parseFloat(scanVal));
-        alert("Ürün başarıyla kaydedildi!");
-        showPage('home');
-    }
-
-    window.onload = () => { updateUI(); setTimeout(initChart, 200); };
+    window.onload = () => { setTimeout(initChart, 200); };
 </script>
-
 </body>
 </html>
