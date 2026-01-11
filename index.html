@@ -3,160 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoScan: Profesyonel Karbon Asistanı</title>
+    <title>EcoScan: Profesyonel Karbon Koçu</title>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #065f46; --accent: #10b981; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; }
-        
+        :root { --primary: #065f46; --accent: #10b981; --bg: #f8fafc; --white: #ffffff; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: #1e293b; padding-bottom: 110px; }
         .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
         .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Kartlar */
-        .header-card { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 35px 20px; border-radius: 0 0 35px 35px; text-align: center; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
+        /* Kartlar ve Raporlar */
+        .header-card { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .mini-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
+        .mini-card span { display: block; font-size: 12px; color: #64748b; }
+        .mini-card strong { font-size: 18px; color: var(--primary); }
+
+        /* Motivasyon Alanı */
+        .motivation-box { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 20px; border-radius: 20px; margin-top: 20px; text-align: center; }
+        .impact-score { font-size: 24px; font-weight: 800; color: #059669; margin: 10px 0; }
+
         /* Hesaplama Formu */
-        .calc-group { margin-bottom: 15px; }
-        select, input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; margin-top: 5px; box-sizing: border-box; }
-        
-        /* Sonuç ve Tavsiye Alanı */
-        #calc-result-area { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; }
-        .advice-item { font-size: 14px; color: #166534; margin-top: 10px; padding-left: 20px; position: relative; }
-        .advice-item::before { content: "🌱"; position: absolute; left: 0; }
+        .input-box { margin-bottom: 15px; text-align: left; }
+        select, input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; margin-top: 5px; }
 
-        /* Alt Buton ve Navigasyon */
-        .bottom-action-container { position: fixed; bottom: 80px; width: 100%; padding: 0 20px; box-sizing: border-box; z-index: 999; }
-        .btn-calculate-float { background: #fbbf24; color: #92400e; border: none; padding: 15px; border-radius: 15px; font-weight: 800; width: 100%; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4); cursor: pointer; font-size: 16px; }
-        
-        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 75px; z-index: 1000; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; color: #64748b; cursor: pointer; }
+        /* Navigasyon */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 75px; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: #94a3b8; cursor: pointer; }
         .nav-active { color: var(--primary); font-weight: bold; }
 
-        .btn-green { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
-        #scanner-container { width: 100%; height: 250px; background: #000; border-radius: 20px; overflow: hidden; }
+        .btn-calc-float { position: fixed; bottom: 85px; left: 20px; right: 20px; background: #fbbf24; color: #78350f; border: none; padding: 16px; border-radius: 16px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(251,191,36,0.4); cursor: pointer; z-index: 999; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div id="home-page" class="page active">
     <div class="header-card">
-        <h2 style="margin:0">EcoScan PRO</h2>
-        <p>Karbon ayak izini kontrol altına al.</p>
+        <h2 style="margin:0">EcoScan PRO 🌿</h2>
+        <p id="date-display" style="opacity: 0.8; font-size: 14px;"></p>
     </div>
-    <div class="stat-card">
-        <canvas id="carbonChart" style="height: 200px;"></canvas>
+
+    <div class="motivation-box">
+        <div style="font-size: 14px;">Doğaya Katkı Oranın</div>
+        <div class="impact-score" id="impact-percent">%0</div>
+        <p id="motivation-text" style="font-size: 13px; color: #065f46; line-height: 1.4;"></p>
+    </div>
+
+    <div class="stat-grid">
+        <div class="mini-card"><span>Bugünkü İz</span><strong id="daily-kg">0.0</strong><small> kg</small></div>
+        <div class="mini-card"><span>Haftalık Toplam</span><strong id="weekly-kg">0.0</strong><small> kg</small></div>
+        <div class="mini-card"><span>Aylık Toplam</span><strong id="monthly-kg">0.0</strong><small> kg</small></div>
+        <div class="mini-card"><span>Genel Ortalama</span><strong id="avg-kg">0.0</strong><small> kg</small></div>
+    </div>
+
+    <div class="mini-card" style="margin-top:20px;">
+        <canvas id="mainChart" style="height: 180px;"></canvas>
     </div>
 </div>
 
 <div id="scan-page" class="page">
     <h2 style="text-align:center">Ürün Analizi</h2>
-    <div id="scanner-container"><video id="video"></video></div>
-    <div id="result" class="stat-card" style="display:none; margin-top:20px;">
-        <h3 id="pName">Analiz Ediliyor...</h3>
-        <p>Hesaplanan İz: <strong id="pCO2" style="color:#ef4444;">0</strong> kg CO2</p>
-        <button class="btn-green" id="saveScanBtn">Günlüğe Kaydet</button>
+    <div style="width:100%; height:250px; background:black; border-radius:20px; overflow:hidden;"><video id="video" style="width:100%; height:100%; object-fit:cover;"></video></div>
+    <div id="scan-result" class="mini-card" style="display:none; margin-top:20px;">
+        <h3 id="pName" style="margin:0">Ürün Adı</h3>
+        <p>Hesaplanan Karbon: <strong id="pCO2" style="color:#ef4444;">0</strong> kg</p>
+        <button class="btn-save" onclick="addFromScan()">Güne Ekle</button>
     </div>
 </div>
 
 <div id="calc-page" class="page">
     <h2>Profesyonel Hesaplayıcı</h2>
-    <div class="stat-card">
-        <div class="calc-group">
-            <label>Ulaşım / Aktivite</label>
+    <div class="mini-card">
+        <div class="input-box">
+            <label>Aktivite Tipi</label>
             <select id="calc-type">
                 <option value="0.18">🚗 Araba (Benzinli - 1km)</option>
-                <option value="0.06">🚌 Otobüs / Metro (1km)</option>
+                <option value="0.06">🚌 Toplu Taşıma (1km)</option>
                 <option value="2.50">🥩 Kırmızı Et (1 Porsiyon)</option>
                 <option value="0.80">🍗 Beyaz Et (1 Porsiyon)</option>
-                <option value="0.20">⚡ Elektrik Kullanımı (1 kWh)</option>
+                <option value="0.40">🥛 Süt / Yoğurt (1 Porsiyon)</option>
             </select>
         </div>
-        <div class="calc-group">
+        <div class="input-box">
             <label>Miktar</label>
-            <input type="number" id="calc-amount" placeholder="Örn: 10" min="1">
+            <input type="number" id="calc-amount" placeholder="Miktar giriniz..." min="1">
         </div>
-        <button class="btn-green" onclick="runProfessionalCalc()">Hesapla ve Kaydet</button>
-
-        <div id="calc-result-area">
-            <div style="font-size: 18px; font-weight: bold; color: var(--primary);">Sonuç: <span id="calc-kg">0</span> kg CO2</div>
-            <hr style="border: 0; border-top: 1px solid #bbf7d0; margin: 10px 0;">
-            <div id="advice-list"></div>
-        </div>
+        <button class="btn-save" onclick="calculatePro()">Hesapla ve Güne İşle</button>
     </div>
 </div>
 
-<div class="bottom-action-container">
-    <button class="btn-calculate-float" onclick="showPage('calc')">⚖️ Karbon Ayak İzi Hesapla</button>
-</div>
+<button class="btn-calc-float" onclick="showPage('calc')">⚖️ Karbon Ayak İzi Hesapla</button>
 
-<div class="nav">
-    <div class="nav-item nav-active" id="nav-home" onclick="showPage('home')">🏠 Özet</div>
+<div class="bottom-nav">
+    <div class="nav-item nav-active" id="nav-home" onclick="showPage('home')">🏠 Rapor</div>
     <div class="nav-item" id="nav-scan" onclick="showPage('scan')">📸 Tara</div>
 </div>
 
 <script>
-    let history = JSON.parse(localStorage.getItem('ecoHistoryV6')) || [0,0,0,0,0,0,0];
+    // VERİ YAPISI: [Günlük, Haftalık, Aylık, Kayıt Sayısı]
+    let ecoData = JSON.parse(localStorage.getItem('ecoStatsV6')) || {
+        daily: 0,
+        weekly: 0,
+        monthly: 0,
+        count: 0,
+        history: [0, 0, 0, 0, 0, 0, 0] // Son 7 günün verisi
+    };
+
     const codeReader = new ZXing.BrowserMultiFormatReader();
     let myChart = null;
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+    function showPage(p) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('nav-active'));
+        document.getElementById(p + '-page').classList.add('active');
+        if(document.getElementById('nav-' + p)) document.getElementById('nav-' + p).classList.add('nav-active');
         
-        document.getElementById(pageId + '-page').classList.add('active');
-        const navItem = document.getElementById('nav-' + pageId);
-        if(navItem) navItem.classList.add('nav-active');
-
-        if(pageId === 'scan') startScanning();
-        else codeReader.reset();
-
-        if(pageId === 'home') setTimeout(initChart, 100);
+        if(p === 'scan') startScanner(); else codeReader.reset();
+        if(p === 'home') { updateUI(); setTimeout(initChart, 100); }
     }
 
-    // PROFESYONEL HESAPLAMA VE TAVSİYELER
-    function runProfessionalCalc() {
+    // HESAPLAMA MOTORU
+    function calculatePro() {
         const factor = parseFloat(document.getElementById('calc-type').value);
         const amount = parseFloat(document.getElementById('calc-amount').value);
-        
-        if(!amount || amount <= 0) { alert("Lütfen geçerli bir miktar girin."); return; }
+        if(!amount) return alert("Lütfen miktar girin.");
 
         const res = factor * amount;
-        document.getElementById('calc-kg').innerText = res.toFixed(2);
-        document.getElementById('calc-result-area').style.display = 'block';
-
-        // Tavsiye Motoru
-        const adviceList = document.getElementById('advice-list');
-        adviceList.innerHTML = "";
-        
-        let advices = [];
-        if(factor > 2) { // Et tüketimi
-            advices = ["Haftada bir günü 'Etsiz Gün' ilan ederek karbon izini %15 düşürebilirsin.", "Bitkisel protein kaynaklarına (mercimek, nohut) yönelmeyi dene."];
-        } else if(factor < 0.2 && factor > 0.05) { // Ulaşım
-            advices = ["Kısa mesafelerde bisiklet kullanarak bu izi sıfıra indirebilirsin.", "Araç paylaşımı uygulamalarını kullanarak verimliliği artır."];
-        } else {
-            advices = ["Enerji tasarruflu ampuller kullanarak yıllık 200kg CO2 tasarrufu sağlayabilirsin.", "Gereksiz fişleri prizden çekmek gizli karbon salınımını engeller."];
-        }
-
-        advices.forEach(a => {
-            adviceList.innerHTML += `<div class="advice-item">${a}</div>`;
-        });
-
-        // Veriyi Kaydet
-        saveToHistory(res);
+        updateData(res);
+        alert(`${res.toFixed(2)} kg CO2 başarıyla kaydedildi!`);
+        showPage('home');
     }
 
-    function saveToHistory(val) {
-        let day = new Date().getDay();
-        day = day === 0 ? 6 : day - 1;
-        history[day] = parseFloat((history[day] + val).toFixed(2));
-        localStorage.setItem('ecoHistoryV6', JSON.stringify(history));
+    function updateData(val) {
+        const now = new Date();
+        const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
+
+        ecoData.daily += val;
+        ecoData.weekly += val;
+        ecoData.monthly += val;
+        ecoData.count += 1;
+        ecoData.history[day] += val;
+
+        localStorage.setItem('ecoStatsV6', JSON.stringify(ecoData));
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('daily-kg').innerText = ecoData.daily.toFixed(1);
+        document.getElementById('weekly-kg').innerText = ecoData.weekly.toFixed(1);
+        document.getElementById('monthly-kg').innerText = ecoData.monthly.toFixed(1);
+        
+        const avg = (ecoData.monthly / (new Date().getDate())).toFixed(1);
+        document.getElementById('avg-kg').innerText = avg;
+
+        // DOĞAYA DESTEK SKORU VE MOTİVASYON
+        const worldAvg = 13.0; // Günlük ortalama 13kg varsayımı
+        let supportPercent = Math.max(0, 100 - (ecoData.daily / worldAvg * 100));
+        if(ecoData.daily === 0) supportPercent = 0;
+
+        document.getElementById('impact-percent').innerText = `%${supportPercent.toFixed(0)}`;
+        
+        const mText = document.getElementById('motivation-text');
+        if(supportPercent > 70) {
+            mText.innerText = "Harikasın! Bugün bir ağaç dikmiş kadar doğayı korudun. Takdirlerimizi sunuyoruz! 🌟";
+        } else if(supportPercent > 40) {
+            mText.innerText = "İyi bir yoldasın. Küçük değişikliklerle doğaya desteğini %60'ın üzerine çıkarabilirsin! 🌱";
+        } else {
+            mText.innerText = "Bugün izin biraz yüksek. Toplu taşımayı seçerek yarın bu skoru %50 artırabilirsin! 🚲";
+        }
+        
+        document.getElementById('date-display').innerText = new Date().toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
     }
 
     function initChart() {
-        const ctx = document.getElementById('carbonChart');
+        const ctx = document.getElementById('mainChart').getContext('2d');
         if(myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'line',
@@ -164,44 +186,42 @@
                 labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
                 datasets: [{
                     label: 'Günlük kg CO2',
-                    data: history,
+                    data: ecoData.history,
                     borderColor: '#065f46',
                     tension: 0.4,
                     fill: true,
-                    backgroundColor: 'rgba(6, 95, 70, 0.1)'
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)'
                 }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    function startScanning() {
-        codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+    // TARAMA VE DİĞER FONKSİYONLAR
+    let scanVal = 0;
+    function startScanner() {
+        codeReader.decodeFromVideoDevice(null, 'video', (result) => {
             if (result) {
-                fetchProduct(result.text);
+                document.getElementById('scan-result').style.display = 'block';
+                fetch(`https://world.openfoodfacts.org/api/v0/product/${result.text}.json`)
+                    .then(r => r.json()).then(d => {
+                        const name = d.status === 1 ? d.product.product_name : "Yerel Ürün";
+                        scanVal = (Math.random() * 1.2).toFixed(2);
+                        document.getElementById('pName').innerText = name;
+                        document.getElementById('pCO2').innerText = scanVal;
+                    });
                 codeReader.reset();
             }
         });
     }
 
-    function fetchProduct(barcode) {
-        document.getElementById('result').style.display = 'block';
-        fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-            .then(r => r.json())
-            .then(data => {
-                let name = data.status === 1 ? data.product.product_name : "Bilinmeyen Ürün";
-                let co2 = (Math.random() * 2).toFixed(2);
-                document.getElementById('pName').innerText = name;
-                document.getElementById('pCO2').innerText = co2;
-                document.getElementById('saveScanBtn').onclick = () => {
-                    saveToHistory(parseFloat(co2));
-                    alert("Kaydedildi!");
-                    showPage('home');
-                };
-            });
+    function addFromScan() {
+        updateData(parseFloat(scanVal));
+        alert("Ürün başarıyla kaydedildi!");
+        showPage('home');
     }
 
-    window.onload = initChart;
+    window.onload = () => { updateUI(); setTimeout(initChart, 200); };
 </script>
 
 </body>
